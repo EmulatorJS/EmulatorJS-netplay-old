@@ -11,6 +11,7 @@ const FileSystem = require("./FileSystem.js");
 global.data = {}
 global.extra = {}
 global.users = {}
+global.sockets = {}
 
 app.use(cors())
 
@@ -35,8 +36,15 @@ io.on('connection', (socket) => {
     var args = transformArgs(url)
     var room = ''
     var data = {}
-    var extraData = {}
+    var extraData = JSON.parse(args.extra)
     console.log('a user connected');
+    if (! global.sockets[extraData.domain]) {
+        global.sockets[extraData.domain] = {}
+    }
+    if (! global.sockets[extraData.domain][extraData.game_id]) {
+        global.sockets[extraData.domain][extraData.game_id] = []
+    }
+    global.sockets[extraData.domain][extraData.game_id][args.userid] = socket
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
@@ -77,37 +85,39 @@ io.on('connection', (socket) => {
         cb(true, true)
     })
     socket.on('join-room', function(data, cb) {
+        socket.to(data.extra.domain+':'+data.extra.game_id+':'+data.sessionid).emit('netplay', {
+            "remoteUserId": args.userid,
+            "message": {
+                "newParticipationRequest": true,
+                "isOneWay": false,
+                "isDataOnly": true,
+                "localPeerSdpConstraints": {
+                    "OfferToReceiveAudio": false,
+                    "OfferToReceiveVideo": false
+                },
+                "remotePeerSdpConstraints": {
+                    "OfferToReceiveAudio": false,
+                    "OfferToReceiveVideo": false
+                }
+            },
+            "sender": global.users[data.extra.domain][data.extra.game_id][0]
+        })
+        
         socket.join(data.extra.domain+':'+data.extra.game_id+':'+data.sessionid)
-        global.data[data.extra.domain][data.extra.game_id][data.sessionid].current++/*
-        global.extra[data.extra.domain][data.extra.game_id][data.sessionid].push({
-            socket: socket,
-            owner = false,
-            user_id: args.userid,
-            sdpConstraints: data.sdpConstraints.mandatory
-        })*/
+        global.data[data.extra.domain][data.extra.game_id][data.sessionid].current++
+        
         room = data.extra.domain+':'+data.extra.game_id+':'+data.sessionid
         socket.to(room).emit('user-connected', args.userid)
         global.users[data.extra.domain][data.extra.game_id].push(args.userid)
+        
         socket.emit('user-connected', global.users[data.extra.domain][data.extra.game_id][0])
-        /*
-        global.extra[data.extra.domain][data.extra.game_id][data.sessionid][0].socket.emit('netplay', {
-            remoteUserId: global.extra[data.extra.domain][data.extra.game_id][data.sessionid][0].user_id,
-            sender: args.userid,
-            message: {
-                isDataOnly: data.session.data,
-                isOneWay: false.
-                newParticipationRequest: true,
-                localPeerSdpConstraints: data.sdpConstraints.mandatory,
-                remotePeerSdpConstraints: global.extra[data.extra.domain][data.extra.game_id][data.sessionid][0].sdpConstraints
-                
-            }
-        })*/
         cb(true, true)
     })
     socket.on('netplay', function(msg) {
         socket.to(room).emit('netplay', msg)
     })
     socket.on('extra-data-updated', function(msg) {
+        extraData = msg
         var outMsg = JSON.parse(JSON.stringify(msg))
         outMsg.country = 'US'
         io.to(room).emit('extra-data-updated', args.userid, outMsg)
