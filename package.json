@@ -1,0 +1,13 @@
+{
+  "name": "socket-chat-example",
+  "version": "0.0.1",
+  "description": "my first socket.io app",
+  "dependencies": {
+    "atob": "^2.1.2",
+    "cors": "^2.8.5",
+    "electron-forge": "^5.2.4",
+    "express": "^4.17.1",
+    "node-blob": "0.0.2",
+    "socket.io": "^2.2.0"
+  }
+}
