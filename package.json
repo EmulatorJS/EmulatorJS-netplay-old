@@ -1,7 +1,10 @@
 {
-  "name": "socket-chat-example",
-  "version": "0.0.1",
-  "description": "my first socket.io app",
+  "name": "emuserver-netplay",
+  "version": "0.1.2",
+  "scripts": {
+    "start": "npm i && node index.js",
+  },
+  "description": "A Beta Netplay Server For Emulatorjs",
   "dependencies": {
     "atob": "^2.1.2",
     "cors": "^2.8.5",
