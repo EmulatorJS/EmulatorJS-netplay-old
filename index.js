@@ -12,6 +12,7 @@ global.data = {}
 global.extra = {}
 global.users = {}
 global.sockets = {}
+global.rooms = {}
 
 app.use(cors())
 
@@ -36,17 +37,29 @@ io.on('connection', (socket) => {
     var args = transformArgs(url)
     var room = ''
     var data = {}
+    var waitingOnConfirmation = false;
+    var roomOwner = false
     var extraData = JSON.parse(args.extra)
-    console.log('a user connected');
-    if (! global.sockets[extraData.domain]) {
-        global.sockets[extraData.domain] = {}
+    function disconnect() {
+        io.to(room).emit('user-disconnected', args.userid)
+        var newArray = []
+        for (var i=0; i<global.users[extraData.domain][extraData.game_id][args.sessionid].length; i++) {
+            if (global.users[extraData.domain][extraData.game_id][args.sessionid][i] !== args.userid) {
+                newArray.push(global.users[extraData.domain][extraData.game_id][args.sessionid][i])
+            }
+        }
+        if (roomOwner) {
+            io.to(room).emit('set-isInitiator-true', args.sessionid)
+        }
+        global.users[extraData.domain][extraData.game_id][args.sessionid] = newArray
+        global.data[extraData.domain][extraData.game_id][args.sessionid].current = global.users[extraData.domain][extraData.game_id][args.sessionid].length
+        if (global.data[extraData.domain][extraData.game_id][args.sessionid].current === 0) {
+            delete global.data[extraData.domain][extraData.game_id][args.sessionid];
+        }
+        roomOwner = false
     }
-    if (! global.sockets[extraData.domain][extraData.game_id]) {
-        global.sockets[extraData.domain][extraData.game_id] = []
-    }
-    global.sockets[extraData.domain][extraData.game_id][args.userid] = socket
     socket.on('disconnect', () => {
-        console.log('user disconnected');
+        disconnect()
     });
     socket.on('chat message', (msg) => {
         io.emit('chat message', msg);
@@ -58,17 +71,14 @@ io.on('connection', (socket) => {
         if (! global.data[data.extra.domain][data.extra.game_id]) {
             global.data[data.extra.domain][data.extra.game_id] = {}
         }
-        if (! global.extra[data.extra.domain]) {
-            global.extra[data.extra.domain] = {}
-        }
-        if (! global.extra[data.extra.domain][data.extra.game_id]) {
-            global.extra[data.extra.domain][data.extra.game_id] = {}
-        }
         if (! global.users[data.extra.domain]) {
             global.users[data.extra.domain] = {}
         }
         if (! global.users[data.extra.domain][data.extra.game_id]) {
             global.users[data.extra.domain][data.extra.game_id] = []
+        }
+        if (! global.users[data.extra.domain][data.extra.game_id][args.sessionid]) {
+            global.users[data.extra.domain][data.extra.game_id][args.sessionid] = []
         }
         global.data[data.extra.domain][data.extra.game_id][args.sessionid] = {
             owner_name: data.extra.name,
@@ -78,48 +88,67 @@ io.on('connection', (socket) => {
             current: 1,
             password: (data.password === '' ? 0 : 1)
         }
-        global.users[data.extra.domain][data.extra.game_id].push(args.userid)
+        socket.emit('extra-data-updated', null, global.data[data.extra.domain][data.extra.game_id][args.sessionid])
+        
         socket.emit('extra-data-updated', args.userid, global.data[data.extra.domain][data.extra.game_id][args.sessionid])
-        socket.join(data.extra.domain+':'+data.extra.game_id+':'+args.sessionid)
+        
+        global.users[data.extra.domain][data.extra.game_id][args.sessionid].push(args.userid)
         room = data.extra.domain+':'+data.extra.game_id+':'+args.sessionid
-        cb(true, true)
+        socket.join(room)
+        if (! global.rooms[room]) {
+            global.rooms[room] = {}
+        }
+        roomOwner = true
+        cb(true, undefined)
     })
     socket.on('join-room', function(data, cb) {
-        socket.to(data.extra.domain+':'+data.extra.game_id+':'+data.sessionid).emit('netplay', {
-            "remoteUserId": args.userid,
-            "message": {
-                "newParticipationRequest": true,
-                "isOneWay": false,
-                "isDataOnly": true,
-                "localPeerSdpConstraints": {
-                    "OfferToReceiveAudio": false,
-                    "OfferToReceiveVideo": false
-                },
-                "remotePeerSdpConstraints": {
-                    "OfferToReceiveAudio": false,
-                    "OfferToReceiveVideo": false
-                }
-            },
-            "sender": global.users[data.extra.domain][data.extra.game_id][0]
-        })
+        room = data.extra.domain+':'+data.extra.game_id+':'+data.sessionid
         
-        socket.join(data.extra.domain+':'+data.extra.game_id+':'+data.sessionid)
+        for (var i=0; i< global.users[data.extra.domain][data.extra.game_id][args.sessionid].length; i++) {
+            socket.to(room).emit('netplay', {
+                "remoteUserId": global.users[data.extra.domain][data.extra.game_id][args.sessionid][i],
+                "message": {
+                    "newParticipationRequest": true,
+                    "isOneWay": false,
+                    "isDataOnly": true,
+                    "localPeerSdpConstraints": {
+                        "OfferToReceiveAudio": false,
+                        "OfferToReceiveVideo": false
+                    },
+                    "remotePeerSdpConstraints": {
+                        "OfferToReceiveAudio": false,
+                        "OfferToReceiveVideo": false
+                    }
+                },
+                "sender": args.userid,
+                "extra": extraData
+            })
+        }
+        
         global.data[data.extra.domain][data.extra.game_id][data.sessionid].current++
         
-        room = data.extra.domain+':'+data.extra.game_id+':'+data.sessionid
         socket.to(room).emit('user-connected', args.userid)
-        global.users[data.extra.domain][data.extra.game_id].push(args.userid)
+        socket.join(room)
         
-        socket.emit('user-connected', global.users[data.extra.domain][data.extra.game_id][0])
-        cb(true, true)
+        for (var i=0; i<global.users[data.extra.domain][data.extra.game_id][args.sessionid].length; i++) {
+            socket.emit('user-connected', global.users[data.extra.domain][data.extra.game_id][args.sessionid][i])
+        }
+        global.users[data.extra.domain][data.extra.game_id][args.sessionid].push(args.userid)
+        roomOwner = false
+        cb(true, null)
     })
     socket.on('netplay', function(msg) {
-        socket.to(room).emit('netplay', msg)
+        if (msg && msg.message && msg.message.userLeft === true) {
+            disconnect()
+        }
+        var outMsg = JSON.parse(JSON.stringify(msg))
+        outMsg.extra = extraData
+        socket.to(room).emit('netplay', outMsg)
     })
     socket.on('extra-data-updated', function(msg) {
-        extraData = msg
         var outMsg = JSON.parse(JSON.stringify(msg))
         outMsg.country = 'US'
+        extraData = outMsg
         io.to(room).emit('extra-data-updated', args.userid, outMsg)
     })
 });
