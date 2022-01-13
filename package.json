@@ -2,7 +2,7 @@
   "name": "emuserver-netplay",
   "version": "0.1.2",
   "scripts": {
-    "start": "npm install && node index.js"
+    "start": "node index.js"
   },
   "description": "A Beta Netplay Server For Emulatorjs",
   "dependencies": {
