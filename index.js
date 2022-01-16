@@ -127,6 +127,7 @@ function makeServer(port) {
             global.data[extraData.domain][extraData.game_id][args.sessionid].current = global.users[extraData.domain][extraData.game_id][args.sessionid].length
             if (global.data[extraData.domain][extraData.game_id][args.sessionid].current === 0) {
                 delete global.data[extraData.domain][extraData.game_id][args.sessionid];
+                delete global.passwords[extraData.domain][extraData.game_id][args.sessionid];
             }
             roomOwner = false
             socket.leave(room)
