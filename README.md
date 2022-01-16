@@ -2,12 +2,25 @@
 
 working netplay server for https://github.com/ethanaobrien/emulatorjs
 
+for developers:
+
 run `npm i` to init packages
 
-and then `node index.js` to start the server
+and then `npm run start` to start the server
 
-instructions on how to use are in the readme [here](https://github.com/ethanaobrien/emulatorjs)
 
-Bugs may exist
+for users:
 
-TODO: turn into electron UI app
+go to the releases tab and download for the needed os
+
+instructions on how to set up are in the readme [here](https://github.com/ethanaobrien/emulatorjs)
+
+Bugs may exist - open an issue if you find one
+
+
+# LICENSE
+
+Licenced under the Apache License 2.0
+
+Read the whole license [here](LICENSE)
+

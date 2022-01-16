@@ -1,0 +1,30 @@
+<html>
+<head></head>
+<body>
+<h1>emuserver</h1>
+
+<button id="startStop">Start</button>
+<br><br>
+<p>Urls:</p>
+<ul id="urls">
+
+</ul>
+
+<script>
+    document.getElementById('startStop').addEventListener('click', function(e) {
+        (e.target.innerText === 'Start') ? window.api.start() : window.api.stop();
+        e.target.innerText = (e.target.innerText === 'Start') ? 'Stop' : 'Start';
+    })
+    window.addEventListener('load', async function() {
+        var port = 3000
+        var urls = await window.api.getUrls()
+        var text = ''
+        for (var i=0; i<urls.length; i++) {
+            text += '<li><a href="http://'+urls[i]+':'+port+'/" target="_blank" onclick="window.api.openExternal(this.href);event.preventDefault()">http://'+urls[i]+':'+port+'/</a></li>\n';
+        }
+        document.getElementById('urls').innerHTML = text;
+    })
+</script>
+
+</body>
+</html>
