@@ -73,7 +73,7 @@ ipcMain.on('stop', function(e) {
     terminateServers()
 })
 
-function defineArrayPaths(data) {
+function defineArrayPaths(data, args) {
     if (! global.data[data.extra.domain]) {
         global.data[data.extra.domain] = {}
     }
@@ -192,7 +192,7 @@ function makeServer(port) {
             }
         })
         socket.on('open-room', function(data, cb) {
-            defineArrayPaths(data)
+            defineArrayPaths(data, args)
             global.data[data.extra.domain][data.extra.game_id][args.sessionid] = {
                 owner_name: data.extra.name,
                 room_name: data.extra.room_name,
@@ -225,7 +225,7 @@ function makeServer(port) {
             return
         })
         socket.on('join-room', function(data, cb) {
-            defineArrayPaths(data)
+            defineArrayPaths(data, args)
             if (global.passwords[data.extra.domain][data.extra.game_id][args.sessionid]) {
                 var password = global.passwords[data.extra.domain][data.extra.game_id][args.sessionid]
                 if (password !== data.password) {
