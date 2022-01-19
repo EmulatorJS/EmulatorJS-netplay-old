@@ -169,8 +169,9 @@ function makeServer(port) {
                     break;
                 }
             }
-            global.users[extraData.domain][extraData.game_id][args.sessionid] = newArray
-            global.data[extraData.domain][extraData.game_id][args.sessionid].current = global.users[extraData.domain][extraData.game_id][args.sessionid].length
+            global.users[extraData.domain][extraData.game_id][args.sessionid] = newArray;
+            global.data[extraData.domain][extraData.game_id][args.sessionid].current = global.users[extraData.domain][extraData.game_id][args.sessionid].length;
+            global.isOwner[extraData.domain][extraData.game_id][args.sessionid][args.userid] = false;
             if (global.data[extraData.domain][extraData.game_id][args.sessionid].current === 0) {
                 delete global.data[extraData.domain][extraData.game_id][args.sessionid];
                 delete global.passwords[extraData.domain][extraData.game_id][args.sessionid];
@@ -178,7 +179,6 @@ function makeServer(port) {
                 delete global.users[extraData.domain][extraData.game_id][args.sessionid];
                 delete global.isOwner[extraData.domain][extraData.game_id][args.sessionid]
             }
-            global.isOwner[extraData.domain][extraData.game_id][args.sessionid][args.userid] = false;
             socket.leave(room)
             room = ''
         }
