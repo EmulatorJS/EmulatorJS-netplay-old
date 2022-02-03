@@ -6,7 +6,7 @@ for developers:
 
 run `npm i` to init packages
 
-and then `npm run start` to start the server
+and then `npm start` to start the server
 
 
 for users:
