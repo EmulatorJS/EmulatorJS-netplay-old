@@ -1,6 +1,6 @@
 {
   "name": "emuserver",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "main": "index.js",
   "description": "A Netplay Server For Emulatorjs",
   "author": {
@@ -8,57 +8,11 @@
     "url": "https://github.com/ethanaobrien"
   },
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "makeWin": "electron-forge make --platform win32",
-    "makeDarwin": "electron-forge make --platform darwin",
-    "makeLinux": "electron-forge make --platform linux"
-  },
-  "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.57",
-    "@electron-forge/maker-appx": "^6.0.0-beta.59",
-    "@electron-forge/maker-deb": "6.0.0-beta.53",
-    "@electron-forge/maker-dmg": "6.0.0-beta.53",
-    "@electron-forge/maker-rpm": "6.0.0-beta.53",
-    "@electron-forge/maker-squirrel": "6.0.0-beta.53",
-    "@electron-forge/maker-zip": "6.0.0-beta.53",
-    "@electron-forge/plugin-webpack": "^6.0.0-beta.63",
-    "@electron-forge/publisher-github": "^6.0.0-beta.63",
-    "electron": "^13.3.0",
-    "electron-squirrel-startup": "^1.0.0",
-    "electron-windows-store": "^2.1.0"
+    "start": "node src/index.js",
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "socket.io": "^2.2.0"
-  },
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "emuserver_netplay"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
-    }
   }
 }
