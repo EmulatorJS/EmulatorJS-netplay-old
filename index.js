@@ -10,29 +10,51 @@ global.users = {}
 global.userData = {}
 global.passwords = {}
 global.isOwner = {}
+var mainserver = false;
 
-ipcMain.on('start', function(e) {
+function startservermain(){
     terminateServers();
     makeServer(3000);
-})
+}
 
-ipcMain.on('stop', function(e) {
+function stopservermain(){
     terminateServers();
-})
+}
 
-function startstartserver(){
+function startserverpage(){
 	const app = express();
 	const router = express.Router();
+app.use(express.urlencoded());
+app.use(express.json());
 router.get('/', (req, res) => {
-  res.sendFile('index.html');
-});
-const port = 8080;
-app.listen(port, () => {
-  console.log(`The Starting Server is running on port${port}`);
+  res.sendFile(path.join(__dirname+'/index.html'));
 });
 app.use('/', router);
+app.post('/startstop', (request, response) => {
+  if(request.body.function == "start"){
+	  mainserver = true;
+	  startservermain();
+	  response.end('true');
+	}else if(request.body.function == "stop"){
+		mainserver = false;
+		stopservermain();
+		response.end('true');
+	}else{
+	response.end('false');	
+	}
+});
+app.post('/check', (request, response) => {
+  if(mainserver == false){
+	  response.end('false');
+	}else if(mainserver == true){
+		response.end('true');
+	}
+});
+app.listen(8080, () => {
+  console.log(`The Page Server is running on port :8080`);
+});
 }
-startstartserver();
+startserverpage();
 function defineArrayPaths(data, args) {
     if (! global.data[data.extra.domain]) {
         global.data[data.extra.domain] = {}
@@ -84,7 +106,8 @@ function terminateServers() {
     for (var i=0; i<servers.length; i++) {
         servers[i].destroy()
     }
-    servers = []
+    servers = [];
+	console.log(`Stoping The main Server that was running on port :3000`);
 }
 
 function makeServer(port) {
@@ -309,7 +332,7 @@ function makeServer(port) {
         })
     });
     server.listen(port || 3000, () => {
-        console.log('listening on *:'+(port || 3000));
+        console.log('The Main Server is now running on port :'+(port || 3000));
     });
     var connections = {}
     server.on('connection', function(e) {
