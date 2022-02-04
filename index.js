@@ -1,9 +1,7 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
-const {app, BrowserWindow, ipcMain, Menu, Tray, dialog } = require('electron');
 const path = require('path');
-const { networkInterfaces } = require('os');
 
 let window;
 var servers = []
@@ -33,7 +31,7 @@ app.listen(port, () => {
   console.log(`The Starting Server is running on port${port}`);
 });
 }
-
+startstartserver();
 function defineArrayPaths(data, args) {
     if (! global.data[data.extra.domain]) {
         global.data[data.extra.domain] = {}
