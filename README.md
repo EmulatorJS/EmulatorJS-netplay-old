@@ -2,16 +2,14 @@
 
 working netplay server for https://github.com/ethanaobrien/emulatorjs
 
-for developers:
+
+**For a webserver:**
+
 
 run `npm i` to init packages
 
 and then `npm start` to start the server
 
-
-for users:
-
-go to the releases tab and download for the needed os
 
 instructions on how to set up are in the readme [here](https://github.com/ethanaobrien/emulatorjs)
 
