@@ -8,7 +8,7 @@
     "url": "https://github.com/ethanaobrien"
   },
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
