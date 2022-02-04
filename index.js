@@ -26,7 +26,7 @@ app.use(cors())
 app.get('/', (req, res) => {
   res.sendFile('index.html');
 });
-const port = 80;
+const port = 8080;
 app.listen(port, () => {
   console.log(`The Starting Server is running on port${port}`);
 });
