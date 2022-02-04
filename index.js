@@ -13,65 +13,26 @@ global.userData = {}
 global.passwords = {}
 global.isOwner = {}
 
-app.on('second-instance', function(e, cmd, dir) {
-    if ('undefined' != typeof window) {
-        window.show();
-    }
-})
-
-app.on('window-all-closed', function() {
-    app.quit()
-})
-
-app.on('ready', function() {
-    createWindow();
-})
-
-function getIPs() {
-    let ifaces = networkInterfaces();
-    var ips = [ ]
-    for (var k in ifaces) {
-        for (var i=0; i<ifaces[k].length; i++) {
-            if (ifaces[k][i].family == 'IPv4') {
-                ips.push(ifaces[k][i].address)
-            }
-        }
-    }
-    return ips
-}
-
-function createWindow() {
-    window = new BrowserWindow({
-        backgroundColor: '#ffffff',
-        width: 420,
-        minWidth: 280,
-        height: 700,
-        minHeight: 200,
-        frame: true,
-        title: "emuserver",
-        webPreferences: {
-            scrollBounce: false,
-            nodeIntegration: false,
-            contextIsolation: true,
-            enableRemoteModule: true,
-            preload: path.join(__dirname, "preload.js")
-        }
-    });
-    window.loadFile('index.html');
-}
-
-ipcMain.handle('getUrls', function(e) {
-    return getIPs();
-})
-
 ipcMain.on('start', function(e) {
-    terminateServers()
-    makeServer(3000)
+    terminateServers();
+    makeServer(3000);
 })
 
 ipcMain.on('stop', function(e) {
-    terminateServers()
+    terminateServers();
 })
+
+function startstartserver(){
+	const app = express();
+app.use(cors())
+app.get('/', (req, res) => {
+  res.sendFile('index.html');
+});
+const port = 80;
+app.listen(port, () => {
+  console.log(`The Starting Server is running on port${port}`);
+});
+}
 
 function defineArrayPaths(data, args) {
     if (! global.data[data.extra.domain]) {
