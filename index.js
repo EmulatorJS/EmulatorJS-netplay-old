@@ -22,14 +22,15 @@ ipcMain.on('stop', function(e) {
 
 function startstartserver(){
 	const app = express();
-app.use(cors())
-app.get('/', (req, res) => {
+	const router = express.Router();
+router.get('/', (req, res) => {
   res.sendFile('index.html');
 });
 const port = 8080;
 app.listen(port, () => {
   console.log(`The Starting Server is running on port${port}`);
 });
+app.use('/', router);
 }
 startstartserver();
 function defineArrayPaths(data, args) {
