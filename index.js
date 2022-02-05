@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const path = require('path');
+const killable = require('killable');
 
 let window;
 var servers = []
@@ -10,20 +11,29 @@ global.users = {}
 global.userData = {}
 global.passwords = {}
 global.isOwner = {}
-var mainserver = false;
+var mainserver = false; //Set true or false for default server status
 
 function startservermain(){
     terminateServers();
     makeServer(process.env.PORT);
 }
+if(mainserver == true){
+	startservermain();
+}else if(mainserver == false){
+	startserverpage();			
+}else{
+   console.error("Error: Default server status no set!");	
+}
 
 function stopservermain(){
     terminateServers();
+	startserverpage();
 }
 
 function startserverpage(){
 	const app = express();
 	const router = express.Router();
+	var server;
 app.use(express.urlencoded());
 app.use(express.json());
 router.get('/', (req, res) => {
@@ -33,12 +43,10 @@ app.use('/', router);
 app.post('/startstop', (request, response) => {
   if(request.body.function == "start"){
 	  mainserver = true;
-	  startservermain();
+	  server.kill(function () {
+    startservermain();
+  });
 	  response.end('true');
-	}else if(request.body.function == "stop"){
-		mainserver = false;
-		stopservermain();
-		response.end('true');
 	}else{
 	response.end('false');	
 	}
@@ -50,11 +58,11 @@ app.post('/check', (request, response) => {
 		response.end('true');
 	}
 });
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`The Page Server is running on port :${process.env.PORT}`);
+var server = app.listen(process.env.PORT || 3000, () => {
+  console.log('The Page Server is running on port :' + (process.env.PORT || 3000));
 });
+killable(server);
 }
-startserverpage();
 function defineArrayPaths(data, args) {
     if (! global.data[data.extra.domain]) {
         global.data[data.extra.domain] = {}
@@ -107,13 +115,38 @@ function terminateServers() {
         servers[i].destroy()
     }
     servers = [];
-	console.log(`Stoping The main Server that was running on port :3000`);
+	console.log('Switching Servers!');
 }
 
 function makeServer(port) {
     const app = express();
     const server = http.createServer(app);
     const io = require("socket.io")(server);
+	 const router = express.Router();
+	var servermain;
+app.use(express.urlencoded());
+app.use(express.json());
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname+'/index.html'));
+});
+app.use('/', router);
+app.post('/startstop', (request, response) => {
+  if(request.body.function == "stop"){
+		mainserver = false;
+		servermain.kill();
+		stopservermain();
+		response.end('true');
+	}else{
+	response.end('false');	
+	}
+});
+app.post('/check', (request, response) => {
+  if(mainserver == false){
+	  response.end('false');
+	}else if(mainserver == true){
+		response.end('true');
+	}
+});
     app.use(cors())
     app.get('/list', function(req, res) {
         var args = transformArgs(req.url)
@@ -331,9 +364,10 @@ function makeServer(port) {
             socket.emit('extra-data-updated', global.userData[extraData.domain][extraData.game_id][args.sessionid][id].extra)
         })
     });
-    server.listen(port || 3000, () => {
+servermain = server.listen(port || 3000, () => {
         console.log('The Main Server is now running on port :'+(port || 3000));
     });
+killable(servermain);
     var connections = {}
     server.on('connection', function(e) {
         var k = e.remoteAddress + ':' + e.remotePort;
