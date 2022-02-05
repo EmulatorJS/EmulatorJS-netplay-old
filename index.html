@@ -4,6 +4,10 @@
 <h1>emuserver</h1>
 <button onclick="startbutton()" id="startStop"></button>
 <p id="status"></p>
+<br>
+<p>URL to use with emulatorjs</p>
+<p id="urls"></p>
+<br>
 <p><a href="https://github.com/ethanaobrien/emuserver">View on github</a></p>
 <p>Licenced under the Apache License 2.0</p>
 <p><a href="https://github.com/ethanaobrien/emuserver/blob/main/LICENSE">Read the whole license here</a></p>
@@ -49,6 +53,7 @@ function check(){
 }
 (function() {
    check();
+	document.getElementById('urls').innerHTML = window.location.protocol + "//" + window.location.hostname+"/";
 })();
 function startstopserver(option){
 	fetch('/startstop', {
