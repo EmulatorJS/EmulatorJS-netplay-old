@@ -6,7 +6,8 @@
 <p id="status"></p>
 <br>
 <p>URL to use with emulatorjs</p>
-<p id="urls"></p>
+<ul id="urls">
+</ul>
 <br>
 <p><a href="https://github.com/ethanaobrien/emuserver">View on github</a></p>
 <p>Licenced under the Apache License 2.0</p>
@@ -53,7 +54,7 @@ function check(){
 }
 (function() {
    check();
-	document.getElementById('urls').innerHTML = window.location.protocol + "//" + window.location.hostname+"/";
+	document.getElementById('urls').innerHTML = '<li><a href="'+window.location.protocol+"//"+window.location.hostname+':'+window.location.port+'/" target="_blank" onclick="window.api.openExternal(this.href);event.preventDefault()">'+window.location.protocol+"//"+window.location.hostname+':'+window.location.port+'/</a></li>';
 })();
 function startstopserver(option){
 	fetch('/startstop', {
