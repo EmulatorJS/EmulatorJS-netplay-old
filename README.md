@@ -2,14 +2,20 @@
 
 working netplay server for https://github.com/ethanaobrien/emulatorjs
 
-**For A webserver:**
+**For a webserver:**
 
-run `cd web-server` to go in the folder
-
-then `npm i` to init packages
+run `npm i` to init packages
 
 and then `npm start` to start the server
 
+edit the `config.json` to your liking
+
+````
+{
+    "defaultserverstate" : false,
+    "passwordforserver" : "mypassword"
+}
+````
 
 **For users with windows:**
 
