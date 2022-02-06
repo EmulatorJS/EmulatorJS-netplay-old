@@ -3,6 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const killable = require('killable');
+const config = require('./config.json');
 
 let window;
 var servers = []
@@ -11,14 +12,14 @@ global.users = {}
 global.userData = {}
 global.passwords = {}
 global.isOwner = {}
-var mainserver = false; //Set true or false for default server status
+var mainserver = config.defaultserverstate;
 
 function startservermain(){
     terminateServers();
     makeServer(process.env.PORT);
 }
 if(mainserver == true){
-	startservermain();
+	makeServer(process.env.PORT);
 }else if(mainserver == false){
 	startserverpage();			
 }else{
@@ -36,26 +37,63 @@ function startserverpage(){
 	var server;
 app.use(express.urlencoded());
 app.use(express.json());
+app.use(cors());
 router.get('/', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
   res.sendFile(path.join(__dirname+'/index.html'));
 });
 app.use('/', router);
-app.post('/startstop', (request, response) => {
-  if(request.body.function == "start"){
+app.post('/startstop', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
+  if(req.body.function == "start"){
 	  mainserver = true;
 	  server.kill(function () {
     startservermain();
   });
-	  response.end('true');
+	  res.end('true');
 	}else{
-	response.end('false');	
+	res.end('false');	
 	}
 });
-app.post('/check', (request, response) => {
+app.post('/check', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
   if(mainserver == false){
-	  response.end('false');
+	  res.end('false');
 	}else if(mainserver == true){
-		response.end('true');
+		res.end('true');
 	}
 });
 var server = app.listen(process.env.PORT || 3000, () => {
@@ -127,24 +165,60 @@ function makeServer(port) {
 app.use(express.urlencoded());
 app.use(express.json());
 router.get('/', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
   res.sendFile(path.join(__dirname+'/index.html'));
 });
 app.use('/', router);
-app.post('/startstop', (request, response) => {
-  if(request.body.function == "stop"){
+app.post('/startstop', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
+  if(req.body.function == "stop"){
 		mainserver = false;
 		servermain.kill();
 		stopservermain();
-		response.end('true');
+		res.end('true');
 	}else{
-	response.end('false');	
+	res.end('false');	
 	}
 });
-app.post('/check', (request, response) => {
+app.post('/check', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
   if(mainserver == false){
-	  response.end('false');
+	  res.end('false');
 	}else if(mainserver == true){
-		response.end('true');
+		res.end('true');
 	}
 });
     app.use(cors())
