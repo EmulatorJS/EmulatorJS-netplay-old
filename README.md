@@ -10,6 +10,10 @@ and then `npm start` to start the server
 
 edit the `config.json` to your liking
 
+to start or stop the server, go to the root of the port or domain.
+
+The username is `admin` and you can set the password in the config `passwordforserver` value.
+
 ````
 {
     "defaultserverstate" : false,
