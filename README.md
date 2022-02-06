@@ -10,6 +10,15 @@ run `npm i` to init packages
 
 and then `npm start` to start the server
 
+edit the `config.json` to your liking
+
+````
+{
+    "defaultserverstate" : false,
+    "passwordforserver" : "mypassword"
+}
+````
+
 
 instructions on how to set up are in the readme [here](https://github.com/ethanaobrien/emulatorjs)
 
