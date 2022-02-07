@@ -1,0 +1,19 @@
+{
+  "name": "emuserver",
+  "version": "0.11.0",
+  "main": "index.js",
+  "description": "A Netplay Server For Emulatorjs",
+  "author": {
+    "name": "Ethan O'Brien",
+    "url": "https://github.com/ethanaobrien"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "killable": "^1.0.1",
+    "socket.io": "^2.2.0"
+  }
+}
