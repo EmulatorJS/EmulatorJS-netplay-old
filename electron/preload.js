@@ -14,4 +14,3 @@ contextBridge.exposeInMainWorld('api', {
         return ipcRenderer.invoke("getUrls")
     }
 })
-
