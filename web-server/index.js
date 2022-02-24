@@ -286,6 +286,7 @@ res.end('{ "users": '+nofusers+" }");
         }
         res.end(JSON.stringify(global.data[args.domain][args.game_id]))
     })
+  setInterval(function () {addreuser("remove", io.engine.clientsCount)}, 1000);
     io.on('connection', (socket) => {
 		 addreuser("add", io.engine.clientsCount);
         var url = socket.handshake.url
@@ -322,6 +323,7 @@ res.end('{ "users": '+nofusers+" }");
             }
             socket.leave(room)
             room = ''
+          addreuser("remove", io.engine.clientsCount);
         }
         socket.on('disconnect', () => {
 			  addreuser("remove", io.engine.clientsCount);
@@ -357,9 +359,11 @@ res.end('{ "users": '+nofusers+" }");
             room = data.extra.domain+':'+data.extra.game_id+':'+args.sessionid
             socket.join(room)
             global.isOwner[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = true;
-            cb(true, undefined)
+            cb(true, undefined);
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('check-presence', function(roomid, cb) {
+          addreuser("remove", io.engine.clientsCount);
             if (global.data[data.extra.domain][data.extra.game_id][roomid]) {
                 cb(true, roomid, null)
                 return
@@ -421,7 +425,8 @@ res.end('{ "users": '+nofusers+" }");
             }
             global.users[data.extra.domain][data.extra.game_id][args.sessionid].push(args.userid)
             global.isOwner[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = false;
-            cb(true, null)
+            cb(true, null);
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('set-password', function(password, cb) {
             if (password && password !== '') {
@@ -431,6 +436,7 @@ res.end('{ "users": '+nofusers+" }");
             if (typeof cb == 'function') {
                 cb(true)
             }
+          addreuser("remove", io.engine.clientsCount);
         });
         socket.on('changed-uuid', function(newUid, cb) {
             var a = global.users[extraData.domain][extraData.game_id][args.sessionid]
@@ -464,6 +470,7 @@ res.end('{ "users": '+nofusers+" }");
             var outMsg = JSON.parse(JSON.stringify(msg))
             outMsg.extra = extraData
             socket.to(room).emit('netplay', outMsg)
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('extra-data-updated', function(msg) {
             var outMsg = JSON.parse(JSON.stringify(msg))
@@ -487,7 +494,8 @@ res.end('{ "users": '+nofusers+" }");
                 }
             }
             
-            io.to(room).emit('extra-data-updated', args.userid, outMsg)
+            io.to(room).emit('extra-data-updated', args.userid, outMsg);
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('get-remote-user-extra-data', function(id) {
             socket.emit('extra-data-updated', global.userData[extraData.domain][extraData.game_id][args.sessionid][id].extra)
