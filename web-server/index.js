@@ -5,6 +5,7 @@ const path = require('path');
 const killable = require('killable');
 const config = require('./config.json');
 
+let nofusers = 0;
 let window;
 var servers = []
 global.data = {}
@@ -53,6 +54,15 @@ router.get('/', (req, res) => {
   }
   res.sendFile(path.join(__dirname+'/index.html'));
 });
+router.get('/img/:imageName', function(req, res) {
+  var image = req.params['imageName'];
+	try {
+  res.sendFile(path.join(__dirname+'/img/'+image));
+	}
+	catch(err) {
+  res.sendStatus(401)
+	}
+});
 app.use('/', router);
 app.post('/startstop', (req, res) => {
 	const reject = () => {
@@ -95,6 +105,21 @@ app.post('/check', (req, res) => {
 	}else if(mainserver == true){
 		res.end('true');
 	}
+});
+app.post('/numusers', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
+res.end('{ "users": '+nofusers+" }");
 });
 var server = app.listen(process.env.PORT || 3000, () => {
   console.log('The Page Server is running on port :' + (process.env.PORT || 3000));
@@ -153,6 +178,7 @@ function terminateServers() {
         servers[i].destroy()
     }
     servers = [];
+	nofusers = 0;
 	console.log('Switching Servers!');
 }
 
@@ -178,6 +204,15 @@ router.get('/', (req, res) => {
     return reject()
   }
   res.sendFile(path.join(__dirname+'/index.html'));
+});
+router.get('/img/:imageName', function(req, res) {
+  var image = req.params['imageName'];
+	try {
+  res.sendFile(path.join(__dirname+'/img/'+image));
+	}
+	catch(err) {
+  res.sendStatus(401)
+	}
 });
 app.use('/', router);
 app.post('/startstop', (req, res) => {
@@ -221,6 +256,21 @@ app.post('/check', (req, res) => {
 		res.end('true');
 	}
 });
+app.post('/numusers', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
+res.end('{ "users": '+nofusers+" }");
+});
     app.use(cors())
     app.get('/list', function(req, res) {
         var args = transformArgs(req.url)
@@ -237,6 +287,7 @@ app.post('/check', (req, res) => {
         res.end(JSON.stringify(global.data[args.domain][args.game_id]))
     })
     io.on('connection', (socket) => {
+		 addreuser("add", io.sockets.sockets.length);
         var url = socket.handshake.url
         var args = transformArgs(url)
         var room = ''
@@ -273,6 +324,7 @@ app.post('/check', (req, res) => {
             room = ''
         }
         socket.on('disconnect', () => {
+			  addreuser("remove", io.sockets.sockets.length);
             disconnect()
         });
         socket.on('close-entire-session', function(cb) {
@@ -472,4 +524,11 @@ function transformArgs(url) {
         }
     }
     return args
+}
+function addreuser(trf, num){
+	if(trf == "add"){
+			nofusers = num;
+	}else if(trf == "remove"){
+		nofusers = num;
+	}
 }
