@@ -1,9 +1,15 @@
 <html>
-<head><title>emuserver</title></head>
+<head>
+	<title>Emulatorjs | Emuserver</title>
+<link rel="icon" type="image/png" href="img/Emulatorjs Logo.png">
+	</head>
 <body>
-<h1>emuserver</h1>
-<button onclick="startbutton()" id="startStop"></button>
+<h1>Emuserver - EmulatorJS</h1>
+<img width="200px" src="img/Emulatorjs Logo.png"><br>
+	<hr>
+<h3>Start/Stop Server</h3><button onclick="startbutton()" id="startStop"></button>
 <p id="status"></p>
+<p id="nuser"></p>
 <br>
 <p>URL to use with emulatorjs</p>
 <ul id="urls">
@@ -86,6 +92,26 @@ function startstopserver(option){
 	});
 	location.reload();
 }
+setInterval(function(){ 
+    checkforusers();
+}, 5000);
+function checkforusers(){
+	fetch('/numusers', {
+    method: 'POST',
+	headers: {
+        'Content-Type': 'application/json',
+			'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+          "checkn": true
+    })
+}).then(response => response.json())
+	.then(data => {
+		data = data.users;
+		document.getElementById('nuser').innerHTML = "Users connected: "+data;
+	});	
+}
+checkforusers();
 </script>
 </body>
 </html>

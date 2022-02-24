@@ -5,6 +5,7 @@ const path = require('path');
 const killable = require('killable');
 const config = require('./config.json');
 
+let nofusers = 0;
 let window;
 var servers = []
 global.data = {}
@@ -53,6 +54,15 @@ router.get('/', (req, res) => {
   }
   res.sendFile(path.join(__dirname+'/index.html'));
 });
+router.get('/img/:imageName', function(req, res) {
+  var image = req.params['imageName'];
+	try {
+  res.sendFile(path.join(__dirname+'/img/'+image));
+	}
+	catch(err) {
+  res.sendStatus(401)
+	}
+});
 app.use('/', router);
 app.post('/startstop', (req, res) => {
 	const reject = () => {
@@ -95,6 +105,21 @@ app.post('/check', (req, res) => {
 	}else if(mainserver == true){
 		res.end('true');
 	}
+});
+app.post('/numusers', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
+res.end('{ "users": '+nofusers+" }");
 });
 var server = app.listen(process.env.PORT || 3000, () => {
   console.log('The Page Server is running on port :' + (process.env.PORT || 3000));
@@ -153,6 +178,7 @@ function terminateServers() {
         servers[i].destroy()
     }
     servers = [];
+	nofusers = 0;
 	console.log('Switching Servers!');
 }
 
@@ -178,6 +204,15 @@ router.get('/', (req, res) => {
     return reject()
   }
   res.sendFile(path.join(__dirname+'/index.html'));
+});
+router.get('/img/:imageName', function(req, res) {
+  var image = req.params['imageName'];
+	try {
+  res.sendFile(path.join(__dirname+'/img/'+image));
+	}
+	catch(err) {
+  res.sendStatus(401)
+	}
 });
 app.use('/', router);
 app.post('/startstop', (req, res) => {
@@ -221,6 +256,21 @@ app.post('/check', (req, res) => {
 		res.end('true');
 	}
 });
+app.post('/numusers', (req, res) => {
+	const reject = () => {
+    res.setHeader('www-authenticate', 'Basic')
+    res.sendStatus(401)
+  }
+  const authorization = req.headers.authorization
+  if(!authorization) {
+    return reject()
+  }
+  const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
+  if(! (username === 'admin' && password === config.passwordforserver)) {
+    return reject()
+  }
+res.end('{ "users": '+nofusers+" }");
+});
     app.use(cors())
     app.get('/list', function(req, res) {
         var args = transformArgs(req.url)
@@ -236,7 +286,9 @@ app.post('/check', (req, res) => {
         }
         res.end(JSON.stringify(global.data[args.domain][args.game_id]))
     })
+  setInterval(function () {addreuser("remove", io.engine.clientsCount)}, 1000);
     io.on('connection', (socket) => {
+		 addreuser("add", io.engine.clientsCount);
         var url = socket.handshake.url
         var args = transformArgs(url)
         var room = ''
@@ -271,8 +323,10 @@ app.post('/check', (req, res) => {
             }
             socket.leave(room)
             room = ''
+          addreuser("remove", io.engine.clientsCount);
         }
         socket.on('disconnect', () => {
+			  addreuser("remove", io.engine.clientsCount);
             disconnect()
         });
         socket.on('close-entire-session', function(cb) {
@@ -280,6 +334,7 @@ app.post('/check', (req, res) => {
             if (typeof cb == 'function') {
                 cb(true)
             }
+			  addreuser("remove", io.engine.clientsCount);
         })
         socket.on('open-room', function(data, cb) {
             defineArrayPaths(data, args)
@@ -304,9 +359,11 @@ app.post('/check', (req, res) => {
             room = data.extra.domain+':'+data.extra.game_id+':'+args.sessionid
             socket.join(room)
             global.isOwner[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = true;
-            cb(true, undefined)
+            cb(true, undefined);
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('check-presence', function(roomid, cb) {
+          addreuser("remove", io.engine.clientsCount);
             if (global.data[data.extra.domain][data.extra.game_id][roomid]) {
                 cb(true, roomid, null)
                 return
@@ -368,7 +425,8 @@ app.post('/check', (req, res) => {
             }
             global.users[data.extra.domain][data.extra.game_id][args.sessionid].push(args.userid)
             global.isOwner[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = false;
-            cb(true, null)
+            cb(true, null);
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('set-password', function(password, cb) {
             if (password && password !== '') {
@@ -378,6 +436,7 @@ app.post('/check', (req, res) => {
             if (typeof cb == 'function') {
                 cb(true)
             }
+          addreuser("remove", io.engine.clientsCount);
         });
         socket.on('changed-uuid', function(newUid, cb) {
             var a = global.users[extraData.domain][extraData.game_id][args.sessionid]
@@ -389,7 +448,8 @@ app.post('/check', (req, res) => {
                     }
                 }
             }
-            args.userid = newUid
+            args.userid = newUid;
+			  addreuser("remove", io.engine.clientsCount);
         });
         socket.on('disconnect-with', function(userid, cb) {
             for (var k in global.userData[extraData.domain][extraData.game_id][args.sessionid]) {
@@ -401,6 +461,7 @@ app.post('/check', (req, res) => {
             if (typeof cb == 'function') {
                 cb(true)
             }
+			  addreuser("remove", io.engine.clientsCount);
         })
         socket.on('netplay', function(msg) {
             if (msg && msg.message && msg.message.userLeft === true) {
@@ -409,6 +470,7 @@ app.post('/check', (req, res) => {
             var outMsg = JSON.parse(JSON.stringify(msg))
             outMsg.extra = extraData
             socket.to(room).emit('netplay', outMsg)
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('extra-data-updated', function(msg) {
             var outMsg = JSON.parse(JSON.stringify(msg))
@@ -432,7 +494,8 @@ app.post('/check', (req, res) => {
                 }
             }
             
-            io.to(room).emit('extra-data-updated', args.userid, outMsg)
+            io.to(room).emit('extra-data-updated', args.userid, outMsg);
+          addreuser("remove", io.engine.clientsCount);
         })
         socket.on('get-remote-user-extra-data', function(id) {
             socket.emit('extra-data-updated', global.userData[extraData.domain][extraData.game_id][args.sessionid][id].extra)
@@ -472,4 +535,11 @@ function transformArgs(url) {
         }
     }
     return args
+}
+function addreuser(trf, num){
+	if(trf == "add"){
+			nofusers = num;
+	}else if(trf == "remove"){
+		nofusers = num;
+	}
 }
