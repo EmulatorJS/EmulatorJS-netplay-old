@@ -332,6 +332,7 @@ res.end('{ "users": '+nofusers+" }");
             if (typeof cb == 'function') {
                 cb(true)
             }
+			  addreuser("remove", io.engine.clientsCount);
         })
         socket.on('open-room', function(data, cb) {
             defineArrayPaths(data, args)
@@ -441,7 +442,8 @@ res.end('{ "users": '+nofusers+" }");
                     }
                 }
             }
-            args.userid = newUid
+            args.userid = newUid;
+			  addreuser("remove", io.engine.clientsCount);
         });
         socket.on('disconnect-with', function(userid, cb) {
             for (var k in global.userData[extraData.domain][extraData.game_id][args.sessionid]) {
@@ -453,6 +455,7 @@ res.end('{ "users": '+nofusers+" }");
             if (typeof cb == 'function') {
                 cb(true)
             }
+			  addreuser("remove", io.engine.clientsCount);
         })
         socket.on('netplay', function(msg) {
             if (msg && msg.message && msg.message.userLeft === true) {
