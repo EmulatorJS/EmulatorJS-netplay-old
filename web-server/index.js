@@ -287,7 +287,7 @@ res.end('{ "users": '+nofusers+" }");
         res.end(JSON.stringify(global.data[args.domain][args.game_id]))
     })
     io.on('connection', (socket) => {
-		 addreuser("add", io.sockets.sockets.length);
+		 addreuser("add", io.engine.clientsCount);
         var url = socket.handshake.url
         var args = transformArgs(url)
         var room = ''
@@ -324,7 +324,7 @@ res.end('{ "users": '+nofusers+" }");
             room = ''
         }
         socket.on('disconnect', () => {
-			  addreuser("remove", io.sockets.sockets.length);
+			  addreuser("remove", io.engine.clientsCount);
             disconnect()
         });
         socket.on('close-entire-session', function(cb) {
