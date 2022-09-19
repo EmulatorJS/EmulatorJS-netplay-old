@@ -508,6 +508,9 @@ function makeServer(port) {
         socket.on('get-remote-user-extra-data', function(id) {
             socket.emit('extra-data-updated', global.userData[extraData.domain][extraData.game_id][args.sessionid][id].extra)
         })
+        socket.on('data-message', function(data) {
+            socket.to(room).emit('data-message', data);
+        })
     });
     servermain = server.listen(port || 3000, () => {
         console.log('The Main Server is now running on port :' + (port || 3000));
