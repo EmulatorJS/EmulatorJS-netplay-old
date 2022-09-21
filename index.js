@@ -509,7 +509,10 @@ function makeServer(port) {
             socket.emit('extra-data-updated', global.userData[extraData.domain][extraData.game_id][args.sessionid][id].extra)
         })
         socket.on('data-message', function(data) {
-            socket.to(room).emit('data-message', data);
+            socket.broadcast.to(room).emit('data-message', data);
+        })
+        socket.on('file-message', function(data) {
+            socket.broadcast.to(room).emit('file-message', data);
         })
     });
     servermain = server.listen(port || 3000, () => {
