@@ -8,15 +8,21 @@ const http = require('http');
 const path = require('path');
 const killable = require('killable');
 const config = require('./config.json');
+const Room = require('./room.js');
 
 let window;
 let server;
-global.data = {}
-global.users = {}
-global.userData = {}
-global.passwords = {}
-global.isOwner = {}
+global.rooms = [];
 let mainserver = true;
+
+function getRoom(domain, game_id, sessionid) {
+    for (let i=0; i<global.rooms.length; i++) {
+        if (global.rooms[i].id === domain + ':' + game_id + ':' + sessionid) {
+            return global.rooms[i];
+        }
+    }
+    return null;
+}
 
 if (mainserver == true) {
     makeServer(process.env.PORT);
@@ -27,7 +33,6 @@ if (mainserver == true) {
 }
 
 function checkAuth(authorization, passwordforserver) {
-    return true;
     if (!authorization) return false;
     const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
     return username === 'admin' && password === passwordforserver;
@@ -89,7 +94,7 @@ function makeServer(port, startIO) {
         if (!checkAuth(req.headers.authorization, config.passwordforserver)) {
             return reject();
         }
-        res.end(mainserver);
+        res.end(mainserver.toString());
     });
     app.post('/numusers', (req, res) => {
         const reject = () => {
@@ -109,16 +114,26 @@ function makeServer(port, startIO) {
             res.setHeader('Content-Type', 'application/json');
             var args = transformArgs(req.url)
             if (!args.game_id || !args.domain) {
-                res.end('{}')
-                return
+                res.end('{}');
+                return;
             }
-            if (!global.data[args.domain]) {
-                global.data[args.domain] = {}
+            args.game_id = parseInt(args.game_id);
+            let rv = {};
+            for (let i=0; i<global.rooms.length; i++) {
+                //console.log(global.rooms[i].domain, args.domain);
+                //console.log(global.rooms[i].game_id, args.game_id);
+                if (global.rooms[i].domain !== args.domain ||
+                    global.rooms[i].game_id !== args.game_id) continue;
+                rv[global.rooms[i].sessionid] = {
+                    owner_name: global.rooms[i].owner.extra.name,
+                    room_name: global.rooms[i].name,
+                    country: 'US',
+                    max: global.rooms[i].max,
+                    current: global.rooms[i].current,
+                    password: (global.rooms[i].password.trim() ? 1 : 0)
+                }
             }
-            if (!global.data[args.domain][args.game_id]) {
-                global.data[args.domain][args.game_id] = {}
-            }
-            res.end(JSON.stringify(global.data[args.domain][args.game_id]))
+            res.end(JSON.stringify(rv));
         })
         const io = require("socket.io")(server, {
             cors: {
@@ -128,107 +143,82 @@ function makeServer(port, startIO) {
             }
         });
         io.on('connection', (socket) => {
-            var url = socket.handshake.url
-            var args = transformArgs(url)
-            var room = ''
-            var extraData = JSON.parse(args.extra);
-            defineArrayPaths({extra:extraData}, args)
+            let url = socket.handshake.url;
+            let args = transformArgs(url);
+            let room = null;
+            let extraData = JSON.parse(args.extra);
 
             function disconnect() {
                 try {
-                    io.to(room).emit('user-disconnected', args.userid)
-                    var newArray = []
-                    for (var i = 0; i < global.users[extraData.domain][extraData.game_id][args.sessionid].length; i++) {
-                        if (global.users[extraData.domain][extraData.game_id][args.sessionid][i] !== args.userid) {
-                            newArray.push(global.users[extraData.domain][extraData.game_id][args.sessionid][i])
-                        }
-                    }
-                    delete global.userData[extraData.domain][extraData.game_id][args.sessionid][args.userid]
-                    if (global.isOwner[extraData.domain][extraData.game_id][args.sessionid][args.userid]) {
-                        for (var k in global.userData[extraData.domain][extraData.game_id][args.sessionid]) {
-                            if (k !== args.userid) {
-                                global.isOwner[extraData.domain][extraData.game_id][args.sessionid][k] = true;
-                                global.userData[extraData.domain][extraData.game_id][args.sessionid][k].socket.emit('set-isInitiator-true', args.sessionid);
-                            }
+                    if (room === null) return;
+                    io.to(room.id).emit('user-disconnected', args.userid);
+                    for (let i=0; i<room.users.length; i++) {
+                        if (room.users[i].userid === args.userid) {
+                            room.users.splice(i, 1);
                             break;
                         }
                     }
-                    global.users[extraData.domain][extraData.game_id][args.sessionid] = newArray;
-                    global.data[extraData.domain][extraData.game_id][args.sessionid].current = global.users[extraData.domain][extraData.game_id][args.sessionid].length;
-                    global.isOwner[extraData.domain][extraData.game_id][args.sessionid][args.userid] = false;
-                    if (global.data[extraData.domain][extraData.game_id][args.sessionid].current === 0) {
-                        delete global.data[extraData.domain][extraData.game_id][args.sessionid];
-                        delete global.passwords[extraData.domain][extraData.game_id][args.sessionid];
-                        delete global.userData[extraData.domain][extraData.game_id][args.sessionid];
-                        delete global.users[extraData.domain][extraData.game_id][args.sessionid];
-                        delete global.isOwner[extraData.domain][extraData.game_id][args.sessionid]
+                    if (!room.users[0]) {
+                        for (let i=0; i<global.rooms.length; i++) {
+                            if (global.rooms[i].id === room.id) {
+                                global.rooms.splice(i, 1);
+                            }
+                        }
+                    } else {
+                        if (room.owner.userid === args.userid) {
+                            room.owner = room.users[0];
+                            room.owner.socket.emit('set-isInitiator-true', args.sessionid);
+                        }
+                        room.current = room.users.length;
                     }
-                    socket.leave(room);
-                    room = '';
-                } catch (e) {}
+                    socket.leave(room.id);
+                    room = null;
+                } catch (e) {
+                    console.warn(e);
+                }
             }
-            socket.on('disconnect', () => {
-                disconnect();
-            });
+            socket.on('disconnect', disconnect);
+
+
             socket.on('close-entire-session', function(cb) {
-                io.to(room).emit('closed-entire-session', args.sessionid, extraData)
-                if (typeof cb == 'function') cb(true);
+                io.to(room.id).emit('closed-entire-session', args.sessionid, extraData);
+                if (typeof cb === 'function') cb(true);
             })
             socket.on('open-room', function(data, cb) {
-                defineArrayPaths(data, args)
-                global.data[data.extra.domain][data.extra.game_id][args.sessionid] = {
-                    owner_name: data.extra.name,
-                    room_name: data.extra.room_name,
-                    country: 'US',
-                    max: parseInt(args.maxParticipantsAllowed) || 2,
-                    current: 1,
-                    password: (data.password === '' ? 0 : 1)
-                }
-                global.passwords[data.extra.domain][data.extra.game_id][args.sessionid] = (data.password === '' ? null : data.password);
-                socket.emit('extra-data-updated', null, global.data[data.extra.domain][data.extra.game_id][args.sessionid])
+                room = new Room(data.extra.domain, data.extra.game_id, args.sessionid, data.extra.room_name, args.maxParticipantsAllowed, 1, data.password.trim(), args.userid, socket, data.extra);
+                global.rooms.push(room);
+                extraData = data.extra;
 
-                socket.emit('extra-data-updated', args.userid, global.data[data.extra.domain][data.extra.game_id][args.sessionid])
+                socket.emit('extra-data-updated', null, extraData);
+                socket.emit('extra-data-updated', args.userid, extraData);
 
-                global.userData[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = {
-                    "socket": socket,
-                    "extra": data.extra
-                }
-                global.users[data.extra.domain][data.extra.game_id][args.sessionid].push(args.userid)
-                room = data.extra.domain + ':' + data.extra.game_id + ':' + args.sessionid
-                socket.join(room)
-                global.isOwner[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = true;
+                socket.join(room.id);
                 cb(true, undefined);
             })
+
+
             socket.on('check-presence', function(roomid, cb) {
-                if (global.data[data.extra.domain][data.extra.game_id][roomid]) {
-                    cb(true, roomid, null)
-                    return
-                }
-                cb(false, roomid, null)
-                return
+                cb(getRoom(extraData.domain, extraData.game_id, roomid)!==null, roomid, null);
             })
             socket.on('join-room', function(data, cb) {
-                defineArrayPaths(data, args)
-                if (global.passwords[data.extra.domain][data.extra.game_id][args.sessionid]) {
-                    var password = global.passwords[data.extra.domain][data.extra.game_id][args.sessionid]
-                    if (password !== data.password) {
-                        cb(false, 'INVALID_PASSWORD')
-                        return
-                    }
-                }
-                if (!global.users[data.extra.domain][data.extra.game_id][args.sessionid]) {
-                    cb(false, 'USERID_NOT_AVAILABLE')
-                    return
-                }
-                if (global.data[data.extra.domain][data.extra.game_id][args.sessionid].current >= global.data[data.extra.domain][data.extra.game_id][args.sessionid].max) {
-                    cb(false, 'ROOM_FULL')
-                    return
-                }
-                room = data.extra.domain + ':' + data.extra.game_id + ':' + data.sessionid
 
-                for (var i = 0; i < global.users[data.extra.domain][data.extra.game_id][args.sessionid].length; i++) {
-                    socket.to(room).emit('netplay', {
-                        "remoteUserId": global.users[data.extra.domain][data.extra.game_id][args.sessionid][i],
+                room = getRoom(data.extra.domain, data.extra.game_id, data.sessionid);
+                if (room === null) {
+                    cb(false, 'USERID_NOT_AVAILABLE');
+                    return;
+                }
+                if (room.current >= room.max) {
+                    cb(false, 'ROOM_FULL');
+                    return;
+                }
+                if (room.hasPassword && !room.checkPassword(data.password)) {
+                    cb(false, 'INVALID_PASSWORD');
+                    return;
+                }
+
+                room.users.forEach(user => {
+                    socket.to(room.id).emit("netplay", {
+                        "remoteUserId": user.userid,
                         "message": {
                             "newParticipationRequest": true,
                             "isOneWay": false,
@@ -245,94 +235,80 @@ function makeServer(port, startIO) {
                         "sender": args.userid,
                         "extra": extraData
                     })
-                }
+                })
 
-                global.userData[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = {
-                    "socket": socket,
-                    "extra": data.extra
-                }
-                global.data[data.extra.domain][data.extra.game_id][data.sessionid].current++
+                room.addUser({
+                    userid: args.userid,
+                    socket,
+                    extra: data.extra
+                });
 
-                    socket.to(room).emit('user-connected', args.userid)
-                socket.join(room)
+                socket.to(room.id).emit('user-connected', args.userid);
 
-                for (var i = 0; i < global.users[data.extra.domain][data.extra.game_id][args.sessionid].length; i++) {
-                    socket.emit('user-connected', global.users[data.extra.domain][data.extra.game_id][args.sessionid][i])
-                }
-                global.users[data.extra.domain][data.extra.game_id][args.sessionid].push(args.userid)
-                global.isOwner[data.extra.domain][data.extra.game_id][args.sessionid][args.userid] = false;
+                socket.join(room.id);
+
                 cb(true, null);
             })
             socket.on('set-password', function(password, cb) {
-                if (password && password !== '') {
-                    global.passwords[data.extra.domain][data.extra.game_id][args.sessionid] = password;
-                    global.data[data.extra.domain][data.extra.game_id][args.sessionid].password = 1;
+                if (room === null) {
+                    if (typeof cb === 'function') cb(false);
+                    return;
                 }
-                if (typeof cb == 'function') {
-                    cb(true)
+                if (typeof password === 'string' && password.trim()) {
+                    room.password = password;
+                    room.hasPassword = true;
+                } else {
+                    room.password = password.trim();
+                    room.hasPassword = false;
                 }
+                if (typeof cb === 'function') cb(true);
             });
             socket.on('changed-uuid', function(newUid, cb) {
-                var a = global.users[extraData.domain][extraData.game_id][args.sessionid]
-                if (a.includes(args.userid)) {
-                    for (var i = 0; i < a.length; i++) {
-                        if (global.users[extraData.domain][extraData.game_id][args.sessionid][i] === args.userid) {
-                            global.users[extraData.domain][extraData.game_id][args.sessionid][i] = newUid
-                            break;
-                        }
+                if (room === null) {
+                    if (typeof cb === 'function') cb(false);
+                    return;
+                }
+                for (let i=0; i<room.users.length; i++) {
+                    if (room.users[i].userid === args.userid) {
+                        room.users[i].userid = newUid;
+                        break;
                     }
                 }
-                args.userid = newUid;
+                if (typeof cb === 'function') cb(true);
             });
             socket.on('disconnect-with', function(userid, cb) {
-                for (var k in global.userData[extraData.domain][extraData.game_id][args.sessionid]) {
-                    if (k === userid) {
-                        global.userData[extraData.domain][extraData.game_id][args.sessionid][k].socket.emit('closed-entire-session', args.sessionid, extraData);
-                        disconnect();
-                    }
-                }
-                if (typeof cb == 'function') cb(true);
+                //idk
+                if (typeof cb === 'function') cb(true);
             })
             socket.on('netplay', function(msg) {
-                if (msg && msg.message && msg.message.userLeft === true) {
-                    disconnect()
-                }
+                if (room === null) return;
                 const outMsg = JSON.parse(JSON.stringify(msg));
                 outMsg.extra = extraData;
-                socket.to(room).emit('netplay', outMsg)
+                socket.to(room.id).emit('netplay', outMsg);
+                if (msg && msg.message && msg.message.userLeft === true) disconnect();
             })
             socket.on('extra-data-updated', function(msg) {
+                if (room === null) return;
                 var outMsg = JSON.parse(JSON.stringify(msg))
-                outMsg.country = 'US'
-                extraData = outMsg
-                if (global.userData[extraData.domain] && global.userData[extraData.domain][extraData.game_id] && global.userData[extraData.domain][extraData.game_id][args.sessionid] && global.userData[extraData.domain][extraData.game_id][args.sessionid][args.userid]) {
-                    global.userData[extraData.domain][extraData.game_id][args.sessionid][args.userid].extra = extraData
-                } else if (args.userid) {
-                    if (!global.userData[extraData.domain]) {
-                        global.userData[extraData.domain] = {}
-                    }
-                    if (!global.userData[extraData.domain][extraData.game_id]) {
-                        global.userData[extraData.domain][extraData.game_id] = {}
-                    }
-                    if (!global.userData[extraData.domain][extraData.game_id][args.sessionid]) {
-                        global.userData[extraData.domain][extraData.game_id][args.sessionid] = {}
-                    }
-                    global.userData[extraData.domain][extraData.game_id][args.sessionid][args.userid] = {
-                        "socket": socket,
-                        "extra": extraData
+                outMsg.country = 'US';
+                extraData = outMsg;
+
+                for (let i=0; i<room.users.length; i++) {
+                    if (room.users[i].userid === args.userid) {
+                        room.users[i].extra = extraData;
+                        break;
                     }
                 }
 
-                io.to(room).emit('extra-data-updated', args.userid, outMsg);
+                io.to(room.id).emit('extra-data-updated', args.userid, outMsg);
             })
             socket.on('get-remote-user-extra-data', function(id) {
-                socket.emit('extra-data-updated', global.userData[extraData.domain][extraData.game_id][args.sessionid][id].extra)
-            })
-            socket.on('data-message', function(data) {
-                socket.broadcast.to(room).emit('data-message', data);
-            })
-            socket.on('file-message', function(data) {
-                socket.broadcast.to(room).emit('file-message', data);
+                if (room === null) return;
+                for (let i=0; i<room.users.length; i++) {
+                    if (room.users[i].userid === id) {
+                        socket.emit('extra-data-updated', room.users[i].extra);
+                    }
+                }
             })
         });
     }
