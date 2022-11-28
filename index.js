@@ -113,17 +113,19 @@ function makeServer(port, startIO) {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Content-Type', 'application/json');
             var args = transformArgs(req.url)
-            if (!args.game_id || !args.domain) {
+            if (!args.game_id || !args.domain || !args.coreVer) {
                 res.end('{}');
                 return;
             }
             args.game_id = parseInt(args.game_id);
+            args.coreVer = parseInt(args.coreVer);
             let rv = {};
             for (let i=0; i<global.rooms.length; i++) {
                 //console.log(global.rooms[i].domain, args.domain);
                 //console.log(global.rooms[i].game_id, args.game_id);
                 if (global.rooms[i].domain !== args.domain ||
-                    global.rooms[i].game_id !== args.game_id) continue;
+                    global.rooms[i].game_id !== args.game_id ||
+                    global.rooms[i].coreVer !== args.coreVer) continue;
                 rv[global.rooms[i].sessionid] = {
                     owner_name: global.rooms[i].owner.extra.name,
                     room_name: global.rooms[i].name,
@@ -185,7 +187,7 @@ function makeServer(port, startIO) {
                 if (typeof cb === 'function') cb(true);
             })
             socket.on('open-room', function(data, cb) {
-                room = new Room(data.extra.domain, data.extra.game_id, args.sessionid, data.extra.room_name, args.maxParticipantsAllowed, 1, data.password.trim(), args.userid, socket, data.extra);
+                room = new Room(data.extra.domain, data.extra.game_id, args.sessionid, data.extra.room_name, args.maxParticipantsAllowed, 1, data.password.trim(), args.userid, socket, data.extra, args.coreVer);
                 global.rooms.push(room);
                 extraData = data.extra;
 

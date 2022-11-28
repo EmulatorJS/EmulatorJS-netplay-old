@@ -1,5 +1,5 @@
 class Room {
-    constructor(domain, game_id, sessionid, name, max, current, password, userid, socket, extra) {
+    constructor(domain, game_id, sessionid, name, max, current, password, userid, socket, extra, coreVer) {
         this.domain = domain;
         this.game_id = game_id;
         this.sessionid = sessionid;
@@ -9,6 +9,7 @@ class Room {
         this.password = password.trim();
         this.hasPassword = !!this.password;
         this.id = domain + ':' + game_id + ':' + sessionid;
+        this.coreVer = parseInt(coreVer);
         this.owner = {
             userid,
             socket,
