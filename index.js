@@ -7,7 +7,14 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const killable = require('killable');
-const config = require('./config.json');
+let config;
+if (process.env.NP_PASSWORD) {
+    config = {
+        "passwordforserver" : process.env.NP_PASSWORD
+    }
+} else {
+    config = require('./config.json');
+}
 const Room = require('./room.js');
 
 let window;
