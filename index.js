@@ -5,8 +5,10 @@
 
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const path = require('path');
 const killable = require('killable');
+let webrtcServers = [];
 let config;
 if (process.env.NP_PASSWORD) {
     config = {
@@ -116,6 +118,11 @@ function makeServer(port, startIO) {
     });
 
     if (startIO !== false) {
+        app.get('/webrtc', (req, res) => {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(webrtcServers));
+        });
         app.get('/list', function(req, res) {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Content-Type', 'application/json');
@@ -343,3 +350,18 @@ function transformArgs(url) {
     }
     return args
 }
+
+function getWebrtcServers() {
+    https.get('https://webrtc.emulatorjs.org/', resp => {
+        let chunks = [];
+        resp.on('data', chunk => chunks.push(chunk));
+        resp.on('end', () => {
+            let body = Buffer.concat(chunks);
+            webrtcServers = JSON.parse(body.toString());
+        });
+    }).on('error', (e) => {
+        res.end("error");
+    });
+}
+getWebrtcServers();
+setInterval(getWebrtcServers, 900000);
