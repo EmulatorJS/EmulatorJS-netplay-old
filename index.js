@@ -21,9 +21,17 @@ const Room = require('./room.js');
 
 let window;
 let server;
+/** @type {Room[]} */
 global.rooms = [];
 let mainserver = true;
 
+/**
+ * Get the specified room, or return null if not found
+ * @param {string} domain
+ * @param {any} game_id
+ * @param {any} sessionid
+ * @return {Room} 
+*/
 function getRoom(domain, game_id, sessionid) {
     for (let i=0; i<global.rooms.length; i++) {
         if (global.rooms[i].id === domain + ':' + game_id + ':' + sessionid) {
@@ -41,12 +49,23 @@ if (mainserver == true) {
     console.error("Error: Default server status no set!");
 }
 
+/**
+ * Check if the authorization is valid
+ * @param {string} authorization 
+ * @param {string} passwordforserver 
+ * @returns {boolean}
+ */
 function checkAuth(authorization, passwordforserver) {
     if (!authorization) return false;
     const [username, password] = Buffer.from(authorization.replace('Basic ', ''), 'base64').toString().split(':')
     return username === 'admin' && password === passwordforserver;
 }
 
+/**
+ * Create a server on the specified port
+ * @param {number} port
+ * @param {boolean} startIO
+ */
 function makeServer(port, startIO) {
     const app = express();
     server = http.createServer(app);
@@ -336,6 +355,11 @@ function makeServer(port, startIO) {
     killable(server);
 }
 
+/**
+ * Get the arguments from a url
+ * @param {string} url 
+ * @return {object}
+ */
 function transformArgs(url) {
     var args = {}
     var idx = url.indexOf('?')
