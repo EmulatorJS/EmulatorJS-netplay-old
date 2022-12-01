@@ -5,12 +5,12 @@ class Room {
      * Create a Room
      * @param {string} domain 
      * @param {number} game_id 
-     * @param {number} sessionid 
+     * @param {string} sessionid 
      * @param {string} name 
      * @param {number} max 
      * @param {number} current 
      * @param {string} password 
-     * @param {*} userid 
+     * @param {string} userid 
      * @param {*} socket
      * @param {any} extra
      * @param {string} coreVer
@@ -22,7 +22,7 @@ class Room {
         this.domain = domain;
         /** @type number */
         this.game_id = game_id;
-        /** @type numer */
+        /** @type string */
         this.sessionid = sessionid;
         /** @type string */
         this.name = name;
@@ -35,6 +35,7 @@ class Room {
         /** @type boolean */
         this.hasPassword = !!this.password;
         /** @type string */
+
         this.id = domain + ':' + game_id + ':' + sessionid;
         /** @type number */
         this.coreVer = parseInt(coreVer);
@@ -43,7 +44,7 @@ class Room {
 
         /**
          * @typedef {Object} User
-         * @property {*} userid
+         * @property {string} userid
          * @property {*} socket
          * @property {any} extra 
          */
@@ -72,7 +73,7 @@ class Room {
      * @param {User} user 
      * 
      * @typedef {Object} User
-     * @property {*} userid
+     * @property {string} userid
      * @property {*} socket
      * @property {any} extra 
      */
