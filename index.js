@@ -1,8 +1,3 @@
-// Before this application is released, this needs to be cleaned up.
-// We need to use "let" and "const" instead of var and use semi colons
-
-// I already fixed the cors error
-
 const express = require('express');
 const http = require('http');
 const https = require('https');
@@ -28,8 +23,8 @@ let mainserver = true;
 /**
  * Get the specified room, or return null if not found
  * @param {string} domain
- * @param {any} game_id
- * @param {any} sessionid
+ * @param {number} game_id
+ * @param {string} sessionid
  * @return {Room} 
 */
 function getRoom(domain, game_id, sessionid) {
@@ -41,12 +36,10 @@ function getRoom(domain, game_id, sessionid) {
     return null;
 }
 
-if (mainserver == true) {
+if (mainserver === true) {
     makeServer(process.env.PORT);
-} else if (mainserver == false) {
+} else if (mainserver === false) {
     makeServer(process.env.PORT, false);
-} else {
-    console.error("Error: Default server status no set!");
 }
 
 /**
@@ -83,7 +76,7 @@ function makeServer(port, startIO) {
         res.sendFile(path.join(__dirname + '/index.html'));
     });
     router.get('/img/:imageName', function(req, res) {
-        var image = req.params['imageName'];
+        const image = req.params['imageName'];
         try {
             res.sendFile(path.join(__dirname + '/img/' + image));
         } catch (err) {
@@ -145,7 +138,7 @@ function makeServer(port, startIO) {
         app.get('/list', function(req, res) {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Content-Type', 'application/json');
-            var args = transformArgs(req.url)
+            let args = transformArgs(req.url)
             if (!args.game_id || !args.domain || !args.coreVer) {
                 res.end('{}');
                 return;
@@ -324,7 +317,7 @@ function makeServer(port, startIO) {
             })
             socket.on('extra-data-updated', function(msg) {
                 if (room === null) return;
-                var outMsg = JSON.parse(JSON.stringify(msg))
+                let outMsg = JSON.parse(JSON.stringify(msg))
                 outMsg.country = 'US';
                 extraData = outMsg;
 
