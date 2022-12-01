@@ -11,7 +11,7 @@ class Room {
      * @param {number} current 
      * @param {string} password 
      * @param {string} userid 
-     * @param {*} socket
+     * @param { import("socket.io").Socket } socket
      * @param {any} extra
      * @param {string} coreVer
      * 
@@ -45,7 +45,7 @@ class Room {
         /**
          * @typedef {Object} User
          * @property {string} userid
-         * @property {*} socket
+         * @property { import("socket.io").Socket } socket
          * @property {any} extra 
          */
 
@@ -74,7 +74,7 @@ class Room {
      * 
      * @typedef {Object} User
      * @property {string} userid
-     * @property {*} socket
+     * @property { import("socket.io").Socket } socket
      * @property {any} extra 
      */
     addUser(user) {
