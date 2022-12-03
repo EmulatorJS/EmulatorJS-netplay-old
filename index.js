@@ -381,4 +381,4 @@ function getWebrtcServers() {
     });
 }
 getWebrtcServers();
-setInterval(getWebrtcServers, 900000);
+setInterval(getWebrtcServers, 10800000); // Every 3 hours
