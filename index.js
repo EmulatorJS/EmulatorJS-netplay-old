@@ -3,7 +3,6 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const killable = require('killable');
-const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID || "", process.env.TWILIO_AUTH_TOKEN || "");
 let config;
 if (process.env.NP_PASSWORD) {
     config = {
@@ -20,15 +19,33 @@ let server;
 /** @type {Room[]} */
 global.rooms = [];
 let mainserver = true;
-
 let cachedToken = null;
+let getNewToken;
 
-function getNewToken () {
-    twilio.tokens.create({}, function(err, token) {
-        if (!err && token) {
-            cachedToken = token;
-        }
-    });
+if (process.env.TWILIO_ACCOUNT_SID) {
+    const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID || "", process.env.TWILIO_AUTH_TOKEN || "");
+    getNewToken = function() {
+        twilio.tokens.create({}, function(err, token) {
+            if (!err && token) {
+                cachedToken = token;
+            }
+        });
+    }
+} else {
+    getNewToken = function() {
+        https.get('https://netplay.emulatorjs.org/webrtc', resp => {
+            let chunks = [];
+            resp.on('data', chunk => chunks.push(chunk));
+            resp.on('end', () => {
+                let body = Buffer.concat(chunks);
+                cachedToken = {
+                    iceServers: JSON.parse(body.toString())
+                }
+            });
+        }).on('error', (e) => {
+            cachedToken = null;
+        });
+    }
 }
 // fetch token initially
 getNewToken();
