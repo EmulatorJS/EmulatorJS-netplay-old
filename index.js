@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const killable = require('killable');
-let webrtcServers = [];
+const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID || "", process.env.TWILIO_AUTH_TOKEN || "");
 let config;
 if (process.env.NP_PASSWORD) {
     config = {
@@ -20,6 +20,21 @@ let server;
 /** @type {Room[]} */
 global.rooms = [];
 let mainserver = true;
+
+let cachedToken = null;
+
+function getNewToken () {
+    twilio.tokens.create({}, function(err, token) {
+        if (!err && token) {
+            cachedToken = token;
+        }
+    });
+}
+// fetch token initially
+getNewToken();
+// refetch new token every 15 mins and save to cache
+setInterval(getNewToken, 1000*60*10);
+
 
 /**
  * Get the specified room, or return null if not found
@@ -133,7 +148,11 @@ function makeServer(port, startIO) {
         app.get('/webrtc', (req, res) => {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify(webrtcServers));
+            if (!cachedToken) {
+                res.end("[]");
+            } else {
+                res.json(cachedToken.iceServers);
+            }
         });
         app.get('/list', function(req, res) {
             res.setHeader('Access-Control-Allow-Origin', '*');
@@ -369,18 +388,3 @@ function transformArgs(url) {
     }
     return args
 }
-
-function getWebrtcServers() {
-    https.get('https://webrtc.emulatorjs.org/', resp => {
-        let chunks = [];
-        resp.on('data', chunk => chunks.push(chunk));
-        resp.on('end', () => {
-            let body = Buffer.concat(chunks);
-            webrtcServers = JSON.parse(body.toString());
-        });
-    }).on('error', (e) => {
-        res.end("error");
-    });
-}
-getWebrtcServers();
-setInterval(getWebrtcServers, 10800000); // Every 3 hours
