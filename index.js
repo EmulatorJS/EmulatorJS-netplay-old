@@ -13,6 +13,7 @@ if (process.env.NP_PASSWORD) {
     config = require('./config.json');
 }
 const Room = require('./room.js');
+let nofusers = 0;
 
 let window;
 let server;
@@ -125,7 +126,6 @@ function makeServer(port, startIO) {
         if (!checkAuth(req.headers.authorization, config.passwordforserver)) {
             return reject();
         }
-        let nofusers = 0;
         res.end('{ "users": ' + nofusers + " }");
     });
 
@@ -171,12 +171,14 @@ function makeServer(port, startIO) {
             }
         });
         io.on('connection', (socket) => {
+            nofusers = io.engine.clientsCount;
             let url = socket.handshake.url;
             let args = transformArgs(url);
             let room = null;
             let extraData = JSON.parse(args.extra);
 
             function disconnect() {
+                nofusers = io.engine.clientsCount;
                 try {
                     if (room === null) return;
                     io.to(room.id).emit('user-disconnected', args.userid);
