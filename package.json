@@ -1,5 +1,5 @@
 {
-  "name": "emuserver",
+  "name": "EmulatorJSNetplayServer",
   "version": "0.15.0",
   "main": "index.js",
   "description": "A Netplay Server For Emulatorjs",
