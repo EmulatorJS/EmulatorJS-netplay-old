@@ -432,7 +432,7 @@ function sendLogs() {
         from: process.env.LOGS_USER,
         to: process.env.LOGS_USER,
         subject: 'EmulatorJS Logs',
-        text: JSON.stringify(logs.length)
+        text: JSON.stringify(logs)
     };
     logs = [];
 
