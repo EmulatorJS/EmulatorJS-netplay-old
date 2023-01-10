@@ -421,7 +421,9 @@ try {
             pass: process.env.LOGS_PASS
         }
     });
-} catch(e) {}
+} catch(e) {
+    console.log("Could not setup logs", e);    
+}
 
 let logs = [];
 
