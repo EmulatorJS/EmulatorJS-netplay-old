@@ -3,6 +3,7 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const killable = require('killable');
+const nodemailer = require('nodemailer');
 let config;
 if (process.env.NP_PASSWORD) {
     config = {
@@ -117,6 +118,7 @@ function makeServer(port, startIO) {
         }
     });
     app.use('/', router);
+    app.use('/logs', handleLogs);
     app.post('/startstop', (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic');
@@ -163,6 +165,7 @@ function makeServer(port, startIO) {
 
     if (startIO !== false) {
         app.get('/webrtc', (req, res) => {
+            handleLogs(req, res);
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Content-Type', 'application/json');
             if (!cachedToken) {
@@ -404,4 +407,54 @@ function transformArgs(url) {
         }
     }
     return args
+}
+
+let transporter;
+try {
+    if (!process.env.LOGS) throw '';
+    transporter = nodemailer.createTransport({
+        host: process.env.LOGS_HOST,
+        port: parseInt(process.env.LOGS_PORT),
+        secure: true,
+        auth: {
+            user: process.env.LOGS_USER,
+            pass: process.env.LOGS_PASS
+        }
+    });
+} catch(e) {}
+
+let logs = [];
+
+function sendLogs() {
+    message = {
+        from: process.env.LOGS_USER,
+        to: process.env.LOGS_USER,
+        subject: 'EmulatorJS Logs',
+        text: JSON.stringify(logs.length)
+    };
+    logs = [];
+
+    transporter.sendMail(message, (err, info) => {
+        if (err) {
+            console.log('Error occurred. ' + err.message);
+            return;
+        }
+        console.log('Message sent: %s', info.messageId);
+    });
+}
+
+function handleLogs(req, res) {
+    if (!transporter) return;
+    if (!process.env.LOGS) return;
+    logs.push({
+        time: (new Date()).toDateString(),
+        headers: req.headers,
+        url: req.url
+    });
+
+    if (logs.length > 20) {
+        try {
+            sendLogs();
+        } catch(e) {}
+    }
 }
