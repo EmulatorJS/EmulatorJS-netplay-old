@@ -411,7 +411,6 @@ function transformArgs(url) {
 
 let transporter;
 try {
-    console.log(process.env.LOGS);
     if (!process.env.LOGS) throw '';
     transporter = nodemailer.createTransport({
         host: process.env.LOGS_HOST,
