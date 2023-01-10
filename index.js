@@ -422,7 +422,7 @@ try {
         }
     });
 } catch(e) {
-    console.log("Could not setup logs", e);    
+    console.log("Could not setup logs", e.message, e);
 }
 
 let logs = [];
