@@ -165,7 +165,6 @@ function makeServer(port, startIO) {
 
     if (startIO !== false) {
         app.get('/webrtc', (req, res) => {
-            handleLogs(req, res);
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Content-Type', 'application/json');
             if (!cachedToken) {
@@ -428,6 +427,8 @@ try {
 let logs = [];
 
 function sendLogs() {
+    if (!transporter) return;
+    if (!process.env.LOGS) return;
     message = {
         from: process.env.LOGS_USER,
         to: process.env.LOGS_USER,
@@ -445,13 +446,23 @@ function sendLogs() {
     });
 }
 
-function handleLogs(req, res) {
+async function handleLogs(req, res) {
     if (!transporter) return;
     if (!process.env.LOGS) return;
+    let body = await new Promise(resolve => {
+        let body = Buffer.from('');
+        req.on('data', (chunk) => {
+            body = Buffer.concat([body, chunk]);
+        })
+        req.on('end', () => resolve(body));
+    });
+    try {
+        body = JSON.parse(body);
+    } catch(e) {};
+    res.end('');
     logs.push({
-        time: (new Date()).toDateString(),
-        headers: req.headers,
-        url: req.url
+        time: (new Date()).toLocaleString(),
+        info: body
     });
 
     if (logs.length > 20) {
@@ -460,3 +471,5 @@ function handleLogs(req, res) {
         } catch(e) {}
     }
 }
+
+process.on('SIGTERM', sendLogs())
