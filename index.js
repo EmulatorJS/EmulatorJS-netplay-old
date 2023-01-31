@@ -459,6 +459,7 @@ async function handleLogs(req, res) {
     try {
         body = JSON.parse(body);
     } catch(e) {};
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.end('');
     logs.push({
         time: (new Date()).toLocaleString(),
