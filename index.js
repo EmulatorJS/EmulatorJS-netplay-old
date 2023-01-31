@@ -472,4 +472,4 @@ async function handleLogs(req, res) {
     }
 }
 
-process.on('SIGTERM', sendLogs())
+process.on('SIGTERM', sendLogs);
