@@ -465,12 +465,8 @@ async function handleLogs(req, res) {
         time: (new Date()).toLocaleString(),
         info: body
     });
-
-    if (logs.length > 20) {
-        try {
-            sendLogs();
-        } catch(e) {}
-    }
 }
+
+setInterval(sendLogs, 3600000);
 
 process.on('SIGTERM', sendLogs);
