@@ -436,14 +436,16 @@ function sendLogs() {
         text: JSON.stringify(logs, null, 2)
     };
     logs = [];
-
-    transporter.sendMail(message, (err, info) => {
-        if (err) {
-            console.log('Error occurred. ' + err.message);
-            return;
-        }
-        console.log('Message sent: %s', info.messageId);
-    });
+    return new Promise((resolve) => {
+        transporter.sendMail(message, (err, info) => {
+            resolve();
+            if (err) {
+                console.log('Error occurred. ' + err.message);
+                return;
+            }
+            console.log('Message sent: %s', info.messageId);
+        });
+    })
 }
 
 async function handleLogs(req, res) {
@@ -469,4 +471,7 @@ async function handleLogs(req, res) {
 
 setInterval(sendLogs, 3600000);
 
-process.on('SIGTERM', sendLogs);
+process.on('SIGTERM', async () => {
+    await sendLogs();
+    process.exit(0);
+});
