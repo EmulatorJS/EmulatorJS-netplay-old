@@ -1,9 +1,8 @@
 const express = require('express');
 const http = require('http');
-const https = require('https');
+//const https = require('https');
 const path = require('path');
 const killable = require('killable');
-const nodemailer = require('nodemailer');
 let config;
 if (process.env.NP_PASSWORD) {
     config = {
@@ -23,8 +22,8 @@ let mainserver = true;
 let cachedToken = null;
 let getNewToken;
 
-if (process.env.TWILIO_ACCOUNT_SID) {
-    const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID || "", process.env.TWILIO_AUTH_TOKEN || "");
+if (config.TWILIO_ACCOUNT_SID) {
+    const twilio = require('twilio')(config.TWILIO_ACCOUNT_SID || "", config.TWILIO_AUTH_TOKEN || "");
     getNewToken = function() {
         twilio.tokens.create({}, function(err, token) {
             if (!err && token) {
@@ -34,18 +33,7 @@ if (process.env.TWILIO_ACCOUNT_SID) {
     }
 } else {
     getNewToken = function() {
-        https.get('https://netplay.emulatorjs.org/webrtc', resp => {
-            let chunks = [];
-            resp.on('data', chunk => chunks.push(chunk));
-            resp.on('end', () => {
-                let body = Buffer.concat(chunks);
-                cachedToken = {
-                    iceServers: JSON.parse(body.toString())
-                }
-            });
-        }).on('error', (e) => {
-            cachedToken = null;
-        });
+        throw new Error("Missing twilto information. Cannot run!");
     }
 }
 // fetch token initially
@@ -96,10 +84,9 @@ function checkAuth(authorization, passwordforserver) {
 function makeServer(port, startIO) {
     const app = express();
     server = http.createServer(app);
-    const router = express.Router();
     app.use(express.urlencoded());
     app.use(express.json());
-    router.get('/', (req, res) => {
+    app.get('/', (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic')
             res.sendStatus(401)
@@ -109,7 +96,7 @@ function makeServer(port, startIO) {
         }
         res.sendFile(path.join(__dirname + '/index.html'));
     });
-    router.get('/img/:imageName', function(req, res) {
+    app.get('/img/:imageName', function(req, res) {
         const image = req.params['imageName'];
         try {
             res.sendFile(path.join(__dirname + '/img/' + image));
@@ -117,8 +104,6 @@ function makeServer(port, startIO) {
             res.sendStatus(401)
         }
     });
-    app.use('/', router);
-    app.use('/logs', handleLogs);
     app.post('/startstop', (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic');
@@ -407,71 +392,3 @@ function transformArgs(url) {
     }
     return args
 }
-
-let transporter;
-try {
-    if (!process.env.LOGS) throw '';
-    transporter = nodemailer.createTransport({
-        host: process.env.LOGS_HOST,
-        port: parseInt(process.env.LOGS_PORT),
-        secure: true,
-        auth: {
-            user: process.env.LOGS_USER,
-            pass: process.env.LOGS_PASS
-        }
-    });
-} catch(e) {
-    console.log("Could not setup logs", e.message, e);
-}
-
-let logs = [];
-
-function sendLogs() {
-    if (!transporter) return;
-    if (!process.env.LOGS) return;
-    message = {
-        from: process.env.LOGS_USER,
-        to: process.env.LOGS_USER,
-        subject: 'EmulatorJS Logs',
-        text: JSON.stringify(logs, null, 2)
-    };
-    logs = [];
-    return new Promise((resolve) => {
-        transporter.sendMail(message, (err, info) => {
-            resolve();
-            if (err) {
-                console.log('Error occurred. ' + err.message);
-                return;
-            }
-            console.log('Message sent: %s', info.messageId);
-        });
-    })
-}
-
-async function handleLogs(req, res) {
-    if (!transporter) return;
-    if (!process.env.LOGS) return;
-    let body = await new Promise(resolve => {
-        let body = Buffer.from('');
-        req.on('data', (chunk) => {
-            body = Buffer.concat([body, chunk]);
-        })
-        req.on('end', () => resolve(body));
-    });
-    try {
-        body = JSON.parse(body);
-    } catch(e) {};
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.end('');
-    logs.push({
-        time: (new Date()).toLocaleString(),
-        info: body
-    });
-}
-
-setInterval(sendLogs, 3600000);
-
-process.on('SIGTERM', async () => {
-    await sendLogs();
-    process.exit(0);
-});
