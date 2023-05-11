@@ -3,6 +3,7 @@
   "version": "0.15.0",
   "main": "index.js",
   "description": "A Netplay Server For Emulatorjs",
+  "type": "module",
   "author": {
     "name": "Ethan O'Brien",
     "url": "https://github.com/ethanaobrien"
