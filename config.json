@@ -1,5 +1,5 @@
 {
     "passwordforserver" : "mypassword",
-    "TWILIO_ACCOUNT_SID" : "",
-    "TWILIO_AUTH_TOKEN" : ""
+    "TWILIO_ACCOUNT_SID" : "AC2b82d68189ec5acc310b1800450e59ac",
+    "TWILIO_AUTH_TOKEN" : "AC2b82d68189ec5acc310b1800450e59ac"
 }
