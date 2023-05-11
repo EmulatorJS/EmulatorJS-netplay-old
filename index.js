@@ -1,17 +1,18 @@
-const express = require('express');
-const http = require('http');
+import express from 'express';
+import http from 'http';
 //const https = require('https');
-const path = require('path');
-const killable = require('killable');
+import path from 'node:path';
+import killable from 'killable';
+const __dirname = path.resolve();
 let config;
 if (process.env.NP_PASSWORD) {
     config = {
         "passwordforserver" : process.env.NP_PASSWORD
     }
 } else {
-    config = require('./config.json');
+    const config = import('./config.json')
 }
-const Room = require('./room.js');
+import Room from './room.js'
 let nofusers = 0;
 
 let window;
