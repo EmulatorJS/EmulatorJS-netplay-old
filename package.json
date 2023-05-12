@@ -9,7 +9,7 @@
     "url": "https://github.com/ethanaobrien"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node --no-warnings index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
