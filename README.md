@@ -1,4 +1,5 @@
-# EmulatorJS netplay server
+# EmulatorJS netplay server Old
+*The new version will be available when the new emulatorjs vision 4.0 is released*
 
 Working netplay server for https://github.com/emulatorjs/emulatorjs
 
@@ -27,7 +28,7 @@ Once you have created an application, it will show you your "account info" on th
 
 With the options of "Account SID", and "Auth Token".
 
-Open `twillio.json` and copy and paste these values into the matching empty fields.
+Open `config.json` and copy and paste these values into the matching empty fields.
 
 The netplay server will not start if you do not follow this step.
 

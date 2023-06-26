@@ -1,8 +1,8 @@
 {
-  "name": "emulatorjs-netplay-server",
-  "version": "1.9.0",
+  "name": "emulatorjs-netplay-server-old",
+  "version": "0.16.0",
   "main": "index.js",
-  "description": "A Netplay Server For Emulatorjs",
+  "description": "A Netplay Server For Emulatorjs Old",
   "type": "module",
   "author": {
     "name": "EmulatorJS",
@@ -14,6 +14,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "killable": "^1.0.1",
-    "socket.io": "^4.6.1"
+    "socket.io": "^4.7.0",
+    "twilio": "^4.12.0"
   }
 }
