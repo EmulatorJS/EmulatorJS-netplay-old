@@ -1,5 +1,5 @@
 # EmulatorJS netplay server Old
-*The new version will be available when the new emulatorjs vision 4.0 is released*
+*The new Netplay version will be available when the new emulatorjs vision 4.0 is released*
 
 Working netplay server for https://github.com/emulatorjs/emulatorjs
 
