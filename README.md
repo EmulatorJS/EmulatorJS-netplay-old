@@ -1,10 +1,10 @@
 # EmulatorJS netplay server
 
-Working netplay server for https://github.com/ethanaobrien/emulatorjs
+Working netplay server for https://github.com/emulatorjs/emulatorjs
 
 **To use:**
 
-Run `npm i` to init packages
+Run `npm i` to install packages
 
 And then `npm start` to start the server
 
@@ -13,9 +13,9 @@ Instructions on how to set up with emulatorjs are located [here](https://emulato
 Bugs may exist - open an issue if you find one
 
 
-**Setting up twilto:**
+**Setting up twilio:**
 
-This app required you to sign up for a twilto account.
+This app requires you to sign up for a twilio account.
 
 Don't worry, it's free, at least for as long as I've had it.
 
@@ -27,7 +27,7 @@ Once you have created an application, it will show you your "account info" on th
 
 With the options of "Account SID", and "Auth Token".
 
-Open `config.json` and copy and paste these values into the matching empty fields.
+Open `twillio.json` and copy and paste these values into the matching empty fields.
 
 The netplay server will not start if you do not follow this step.
 
@@ -35,11 +35,11 @@ The netplay server will not start if you do not follow this step.
 
 The username is `admin` and you can set the password in the config `passwordforserver` value.
 
-````
+```json
 {
     "passwordforserver" : "mypassword"
 }
-````
+```
 
 
 # LICENSE
@@ -47,4 +47,3 @@ The username is `admin` and you can set the password in the config `passwordfors
 Licenced under the Apache License 2.0
 
 Read the whole license [here](LICENSE)
-

@@ -1,12 +1,12 @@
 {
-  "name": "EmulatorJSNetplayServer",
-  "version": "0.15.0",
+  "name": "emulatorjs-netplay-server",
+  "version": "1.9.0",
   "main": "index.js",
   "description": "A Netplay Server For Emulatorjs",
   "type": "module",
   "author": {
-    "name": "Ethan O'Brien",
-    "url": "https://github.com/ethanaobrien"
+    "name": "EmulatorJS",
+    "url": "https://github.com/EmulatorJS"
   },
   "scripts": {
     "start": "node --no-warnings index.js"
