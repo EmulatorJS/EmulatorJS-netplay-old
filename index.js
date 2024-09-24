@@ -1,11 +1,16 @@
 import express from 'express';
 import http from 'http';
+import rateLimit from 'express-rate-limit';
 //const https = require('https');
 import path from 'node:path';
 import killable from 'killable';
 import Twilio from 'twilio';
 import { Server } from "socket.io";
 const __dirname = path.resolve();
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+});
 import config from './config.json' assert { type: 'json' };
 if (process.env.NP_PASSWORD) {
     config = {
@@ -87,7 +92,7 @@ function makeServer(port, startIO) {
     server = http.createServer(app);
     app.use(express.urlencoded());
     app.use(express.json());
-    app.get('/', (req, res) => {
+    app.get('/', limiter, (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic')
             res.sendStatus(401)
@@ -97,7 +102,7 @@ function makeServer(port, startIO) {
         }
         res.sendFile(path.join(__dirname + '/index.html'));
     });
-    app.get('/img/:imageName', function(req, res) {
+    app.get('/img/:imageName', limiter, function(req, res) {
         const image = req.params['imageName'];
         try {
             res.sendFile(path.join(__dirname + '/img/' + image));
@@ -105,7 +110,7 @@ function makeServer(port, startIO) {
             res.sendStatus(401)
         }
     });
-    app.post('/startstop', (req, res) => {
+    app.post('/startstop', limiter, (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic');
             res.sendStatus(401);
@@ -128,7 +133,7 @@ function makeServer(port, startIO) {
             });
         }
     });
-    app.post('/check', (req, res) => {
+    app.post('/check', limiter, (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic')
             res.sendStatus(401)
@@ -138,7 +143,7 @@ function makeServer(port, startIO) {
         }
         res.end(mainserver.toString());
     });
-    app.post('/numusers', (req, res) => {
+    app.post('/numusers', limiter, (req, res) => {
         const reject = () => {
             res.setHeader('www-authenticate', 'Basic')
             res.sendStatus(401)
